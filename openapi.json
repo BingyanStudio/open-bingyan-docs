@@ -1,0 +1,571 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Open Bingyan API",
+    "version": "1.0.0",
+    "description": "冰岩开放平台公开 API。所有接口需要 API Key 认证（Bearer Token），并通过 Scope 控制访问权限。\n\n- 生产服务器：`https://open-api.bingyan.net`\n- 认证方式：在 `Authorization` 请求头中使用 `Bearer <API_KEY>`",
+    "contact": {
+      "name": "冰岩作坊",
+      "url": "https://www.bingyan.net/"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/BingyanStudio"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://open-api.bingyan.net",
+      "description": "生产环境"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "在 `Authorization` 请求头中使用 API Key：`Bearer <OPEN_BINGYAN_API_KEY>`"
+      }
+    },
+    "schemas": {
+      "Profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "nickname", "avatar", "introduction", "role", "major", "campus"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "用户唯一标识（cid）"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "昵称"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "uri",
+            "description": "头像 URL"
+          },
+          "introduction": {
+            "type": "string",
+            "description": "个人简介"
+          },
+          "role": {
+            "type": "string",
+            "description": "角色"
+          },
+          "major": {
+            "type": "string",
+            "description": "专业"
+          },
+          "campus": {
+            "type": "string",
+            "description": "校区"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["message_id", "title", "body", "data", "read"],
+        "properties": {
+          "message_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "通知唯一标识"
+          },
+          "title": {
+            "type": "string",
+            "description": "通知标题"
+          },
+          "body": {
+            "type": "string",
+            "description": "通知正文"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "附加数据，键值对形式"
+          },
+          "read": {
+            "type": "boolean",
+            "description": "是否已读"
+          }
+        }
+      },
+      "NotificationPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "page", "page_size", "total"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            },
+            "description": "通知列表"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "每页数量"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "通知总数"
+          }
+        }
+      },
+      "CreateNotificationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "body", "data"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "通知标题"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "通知正文"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "附加数据，键值对形式，序列化后不超过 2048 字节",
+            "x-max-serialized-bytes": 2048
+          },
+          "delivery": {
+            "type": "string",
+            "enum": ["in_app", "push"],
+            "default": "in_app",
+            "description": "投递方式：站内通知或推送"
+          }
+        }
+      },
+      "CreatedNotification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["message_id", "delivery"],
+        "properties": {
+          "message_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "已创建通知的唯一标识"
+          },
+          "delivery": {
+            "type": "string",
+            "enum": ["in_app", "push"],
+            "description": "实际投递方式"
+          }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message", "request_id"],
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string",
+                "description": "人类可读的错误描述"
+              },
+              "request_id": {
+                "type": "string",
+                "minLength": 40,
+                "maxLength": 40,
+                "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                "description": "请求唯一标识，以 `req_` 开头的 UUIDv4"
+              }
+            }
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "description": "错误码",
+        "enum": [
+          "validation_error",
+          "invalid_api_key",
+          "revoked_api_key",
+          "insufficient_scope",
+          "idempotency_conflict",
+          "operation_in_doubt",
+          "rate_limit_exceeded",
+          "internal_error",
+          "upstream_unavailable",
+          "audit_unavailable",
+          "not_found"
+        ]
+      }
+    },
+    "parameters": {
+      "XRequestID": {
+        "name": "X-Request-ID",
+        "in": "header",
+        "required": false,
+        "description": "以 `req_` 开头的标准 UUIDv4；其他格式的值会被替换。",
+        "schema": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 40,
+          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "可打印的 ASCII Key，以带密钥摘要形式保留 24 小时。",
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[\\x20-\\x7E]{8,128}$"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "validation_error",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "invalid_api_key",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "insufficient_scope",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "idempotency_conflict",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "rate_limit_exceeded",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "internal_error",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "upstream_unavailable",
+                "message": "The request is invalid.",
+                "request_id": "req_00000000-0000-4000-8000-000000000000"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "账号与身份",
+      "description": "读取与当前 Client 所代表 User 关联的公开身份资料。"
+    },
+    {
+      "name": "个人通知",
+      "description": "读取自己的通知，或从个人工具向自己发送提醒。"
+    }
+  ],
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "operationId": "profile.get",
+        "tags": ["账号与身份"],
+        "summary": "读取 API Key 所有者的公开资料",
+        "description": "返回与已认证 API Key 所有者关联的冰岩公开资料。\n\n**所需 Scope**：`profile:self:read`",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "公开资料",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                },
+                "example": {
+                  "id": "cid-example",
+                  "nickname": "Example member",
+                  "avatar": "https://open.bingyan.net/assets/avatar-placeholder.png",
+                  "introduction": "Bingyan member",
+                  "role": "member",
+                  "major": "Computer Science",
+                  "campus": "Main campus"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "500": { "$ref": "#/components/responses/InternalServerError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      }
+    },
+    "/v1/me/notifications": {
+      "get": {
+        "operationId": "notifications.list",
+        "tags": ["个人通知"],
+        "summary": "查询 API Key 所有者的 Open Bingyan 通知",
+        "description": "分页返回属于已认证 API Key 所有者的通知。\n\n**所需 Scope**：`notifications:self:read`",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          { "$ref": "#/components/parameters/XRequestID" },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "从 1 开始的页码。",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "description": "每页返回的通知数量。",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "example": 20
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "description": "按已读状态筛选通知。",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "read", "unread"],
+              "default": "all"
+            },
+            "example": "all"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API Key 所有者的通知分页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "message_id": 1001,
+                      "title": "Build completed",
+                      "body": "Your requested build has completed.",
+                      "data": { "source": "build" },
+                      "read": false
+                    }
+                  ],
+                  "page": 1,
+                  "page_size": 20,
+                  "total": 1
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "500": { "$ref": "#/components/responses/InternalServerError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      },
+      "post": {
+        "operationId": "notifications.create",
+        "tags": ["个人通知"],
+        "summary": "向 API Key 所有者发送通知",
+        "description": "为已认证 API Key 所有者创建站内或推送通知。\n\n**所需 Scope**：`notifications:self:write`",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          { "$ref": "#/components/parameters/XRequestID" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              },
+              "example": {
+                "title": "Build completed",
+                "body": "Your requested build has completed.",
+                "data": { "source": "build" },
+                "delivery": "in_app"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "通知已被 Push 服务接受",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedNotification"
+                },
+                "example": {
+                  "message_id": 1001,
+                  "delivery": "in_app"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "500": { "$ref": "#/components/responses/InternalServerError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      }
+    }
+  }
+}
