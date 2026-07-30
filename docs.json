@@ -12,21 +12,8 @@
     "dark": "/images/favicon.svg"
   },
   "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
     "global": {
       "anchors": [
-        {
-          "anchor": "主站",
-          "href": "https://open-bingyan-dev.hust.online/"
-        },
         {
           "anchor": "冰岩作坊",
           "href": "https://www.bingyan.net/"
@@ -36,23 +23,33 @@
           "href": "https://app.hust.online"
         }
       ]
-    }
+    },
+    "languages": [
+      {
+        "language": "cn",
+        "default": true,
+        "hidden": true,
+        "groups": [
+          {
+            "group": "开始使用",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "logo": {
     "light": "/images/logo.svg",
     "dark": "/images/logo.svg"
   },
   "navbar": {
-    "links": [
-      {
-        "href": "/",
-        "label": "回到控制台"
-      }
-    ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "回到控制台",
+      "href": "/"
     }
   },
   "contextual": {
