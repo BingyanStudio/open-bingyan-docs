@@ -48,8 +48,8 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "回到控制台",
-      "href": "/"
+      "label": "控制台",
+      "href": "/console"
     }
   },
   "contextual": {
