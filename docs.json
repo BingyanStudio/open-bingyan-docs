@@ -28,20 +28,14 @@
       {
         "language": "cn",
         "default": true,
+        "hidden": true,
         "groups": [
           {
-            "group": "账号与身份",
-            "pages": ["api/profile-get"]
-          },
-          {
-            "group": "个人通知",
-            "pages": ["api/notifications-list", "api/notifications-create"]
-          }
-        ],
-        "tabs": [
-          {
-            "tab": "API Reference",
-            "openapi": "openapi.json"
+            "group": "开始使用",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
           }
         ]
       }
@@ -55,11 +49,15 @@
     "primary": {
       "type": "button",
       "label": "控制台",
-      "href": "https://open-dev.bingyan.net/console"
+      "href": "/console"
     }
   },
   "contextual": {
-    "options": ["copy", "view", "mcp"]
+    "options": [
+      "copy",
+      "view",
+      "mcp"
+    ]
   },
   "footer": {
     "socials": {
@@ -73,12 +71,6 @@
     "playground": {
       "display": "interactive"
     },
-    "url": "full",
-    "mdx": {
-      "server": "https://open-dev-api.bingyan.net",
-      "auth": {
-        "method": "bearer"
-      }
-    }
+    "url": "full"
   }
 }
