@@ -55,7 +55,7 @@
     "primary": {
       "type": "button",
       "label": "控制台",
-      "href": "/console"
+      "href": "https://open-dev.bingyan.net/console"
     }
   },
   "contextual": {
