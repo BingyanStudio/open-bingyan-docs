@@ -54,8 +54,8 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "回到控制台",
-      "href": "/"
+      "label": "控制台",
+      "href": "/console"
     }
   },
   "contextual": {
@@ -75,7 +75,7 @@
     },
     "url": "full",
     "mdx": {
-      "server": "https://open-api.bingyan.net",
+      "server": "https://open-dev-api.bingyan.net",
       "auth": {
         "method": "bearer"
       }
