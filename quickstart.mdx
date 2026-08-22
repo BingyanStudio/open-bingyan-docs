@@ -19,7 +19,7 @@ description: "用 API Key 查询自己的公开资料"
 export OPEN_BINGYAN_API_KEY="你的 API Key"
 
 curl --request GET \
-  --url https://open-dev-api.bingyan.net/v1/me \
+  --url https://open-api.bingyan.net/v1/me \
   --header "Authorization: Bearer $OPEN_BINGYAN_API_KEY"
 ```
 
@@ -30,7 +30,7 @@ API Key 代表当前登录用户，因此个人数据接口不接受 `cid`、学
 平台也提供 MCP 入口：
 
 ```text
-https://open-dev-api.bingyan.net/mcp
+https://open-api.bingyan.net/mcp
 ```
 
 在支持远程 MCP 的 Agent 中配置该地址，并以 Bearer Token 方式携带同一把 API Key。建议为每个 Agent 单独创建 Key，只开放它会使用的 Scope。
