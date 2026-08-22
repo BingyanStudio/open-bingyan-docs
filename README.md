@@ -1,5 +1,9 @@
 # Mintlify Starter Kit
 
+## Contribution flow
+
+Create documentation changes from `dev` and submit them to `dev` first. After the merged result is verified on the test site, promote `dev` to `main` through a PR. Keep deployment-specific console and API addresses on their respective branches.
+
 Use the starter kit to get your docs deployed and ready to customize.
 
 Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
