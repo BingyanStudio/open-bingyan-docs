@@ -3,7 +3,7 @@
   "info": {
     "title": "Open Bingyan API",
     "version": "1.0.0",
-    "description": "冰岩开放平台公开 API。所有接口需要 API Key 认证（Bearer Token），并通过 Scope 控制访问权限。\n\n- 生产服务器：`https://open-api.bingyan.net`\n- 认证方式：在 `Authorization` 请求头中使用 `Bearer <API_KEY>`",
+    "description": "冰岩开放平台公开 API。所有接口需要 API Key 认证（Bearer Token），并通过 Scope 控制访问权限。\n\n在 `Authorization` 请求头中使用 `Bearer <API_KEY>`。",
     "contact": {
       "name": "冰岩作坊",
       "url": "https://www.bingyan.net/"
@@ -13,12 +13,6 @@
       "url": "https://github.com/BingyanStudio"
     }
   },
-  "servers": [
-    {
-      "url": "https://open-api.bingyan.net",
-      "description": "生产环境"
-    }
-  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {

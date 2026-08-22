@@ -1,7 +1,3 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
@@ -31,3 +27,12 @@
 
 {/* Define what should and shouldn't be documented */}
 {/* Example: Don't document internal admin features */}
+
+## Branch and release flow
+
+- `dev` deploys the documentation used by the shared test environment.
+- `main` deploys the production documentation.
+- Create feature branches from the latest `dev` and open PRs against `dev`.
+- Verify the merged result on the test site, then open a `dev` to `main` PR.
+- Preserve branch-specific console and API addresses when promoting changes.
+- Do not label pages or content with an environment name. The domain already identifies the deployment target.
