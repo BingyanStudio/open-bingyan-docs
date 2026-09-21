@@ -3,21 +3,30 @@ title: "冰岩开放平台"
 description: "把校内服务能力接入你的 Agent、脚本和应用"
 ---
 
-冰岩开放平台提供稳定、统一的接口，让学生开发者和校内团队不必重复处理账号、课表、课程、通知与资料服务的接入细节。
+冰岩开放平台提供统一的 API Key 认证入口，把冰岩作坊各产品的能力整理成可以直接调用的接口。你只需要创建一把 Key，再按接口要求选择 Scope。
 
 <CardGroup cols={2}>
-  <Card title="做一个懂你课表的 Agent" icon="calendar" href="/quickstart">
-    用一把代表你本人的 API Key，让 Agent 在授权范围内读取个人数据。
+  <Card title="先跑通一次 API" icon="play" href="/quickstart">
+    创建一把测试 Key，在 API Reference 里直接发起第一条请求。
   </Card>
-  <Card title="管理 API Key" icon="key" href="/console">
+  <Card title="管理 API Key" icon="key" href="https://open.bingyan.net/console/">
     登录控制台，创建按用途隔离、可独立撤销的开发凭证。
   </Card>
 </CardGroup>
 
-## 当前可以做什么
+## 当前已接入的能力
 
-- 查询自己的账号资料
-- 查询课程与课表信息
-- 搜索爱选修课程和评论
-- 给自己发送通知
-- 查询与下载 1037 Wiki 资料
+| 能力 | 主要用途 |
+| --- | --- |
+| 账号与身份 | 读取当前 API Key 所有者的公开资料 |
+| 课程与课表 | 搜索课程，读取收藏、已修课程、评价和学期课表 |
+| Hustoday | 查询、发布和管理信息流、评论、点赞、收藏与关注 |
+| 1037 Wiki | 搜索页面、合集、分类、评论、互动和文件下载 |
+| 羽毛球与吃货 | 调用羽毛球服务和 Foodie GraphQL 能力 |
+| 通知与反馈 | 查询和管理个人通知，提交反馈 |
+
+完整的路径、参数、响应、认证方式和可交互示例见 **API Reference**。接口对应的上游服务未配置或暂时不可用时，会返回 `503`，具体以响应为准。
+
+<Note>
+  生产环境接口仍会按版本演进，请勿把 API Key 放入公开仓库或前端代码。
+</Note>
