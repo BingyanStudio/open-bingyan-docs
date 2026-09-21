@@ -1,362 +1,1955 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Open Bingyan API",
-    "version": "1.0.0",
-    "description": "冰岩开放平台公开 API。所有接口需要 API Key 认证（Bearer Token），并通过 Scope 控制访问权限。\n\n在 `Authorization` 请求头中使用 `Bearer <API_KEY>`。",
-    "contact": {
-      "name": "冰岩作坊",
-      "url": "https://www.bingyan.net/"
-    },
-    "license": {
-      "name": "MIT",
-      "url": "https://github.com/BingyanStudio"
-    }
-  },
   "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "description": "在 `Authorization` 请求头中使用 API Key：`Bearer <OPEN_BINGYAN_API_KEY>`"
-      }
-    },
     "schemas": {
-      "Profile": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "nickname", "avatar", "introduction", "role", "major", "campus"],
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "用户唯一标识（cid）"
-          },
-          "nickname": {
-            "type": "string",
-            "description": "昵称"
-          },
-          "avatar": {
-            "type": "string",
-            "format": "uri",
-            "description": "头像 URL"
-          },
-          "introduction": {
-            "type": "string",
-            "description": "个人简介"
-          },
-          "role": {
-            "type": "string",
-            "description": "角色"
-          },
-          "major": {
-            "type": "string",
-            "description": "专业"
-          },
-          "campus": {
-            "type": "string",
-            "description": "校区"
-          }
-        }
-      },
-      "Notification": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["message_id", "title", "body", "data", "read"],
-        "properties": {
-          "message_id": {
-            "type": "integer",
-            "format": "int64",
-            "description": "通知唯一标识"
-          },
-          "title": {
-            "type": "string",
-            "description": "通知标题"
-          },
-          "body": {
-            "type": "string",
-            "description": "通知正文"
-          },
-          "data": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "附加数据，键值对形式"
-          },
-          "read": {
-            "type": "boolean",
-            "description": "是否已读"
-          }
-        }
-      },
-      "NotificationPage": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["items", "page", "page_size", "total"],
+      "CourseNamesResult": {
         "properties": {
           "items": {
-            "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Notification"
+              "type": "string"
             },
-            "description": "通知列表"
-          },
-          "page": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "当前页码"
-          },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 50,
-            "description": "每页数量"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 0,
-            "description": "通知总数"
+            "type": "array"
           }
-        }
+        },
+        "type": "object"
       },
-      "CreateNotificationRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["title", "body", "data"],
+      "CreateNotification": {
         "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80,
-            "description": "通知标题"
-          },
           "body": {
-            "type": "string",
-            "minLength": 1,
             "maxLength": 500,
-            "description": "通知正文"
+            "type": "string"
           },
           "data": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "附加数据，键值对形式，序列化后不超过 2048 字节",
-            "x-max-serialized-bytes": 2048
+            "type": "object"
           },
           "delivery": {
-            "type": "string",
-            "enum": ["in_app", "push"],
             "default": "in_app",
-            "description": "投递方式：站内通知或推送"
-          }
-        }
-      },
-      "CreatedNotification": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["message_id", "delivery"],
-        "properties": {
-          "message_id": {
-            "type": "integer",
-            "format": "int64",
-            "description": "已创建通知的唯一标识"
+            "enum": [
+              "in_app",
+              "push"
+            ],
+            "type": "string"
           },
-          "delivery": {
-            "type": "string",
-            "enum": ["in_app", "push"],
-            "description": "实际投递方式"
+          "title": {
+            "maxLength": 80,
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "title",
+          "body"
+        ],
+        "type": "object"
       },
-      "ErrorEnvelope": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["error"],
+      "HustodayAsset": {
         "properties": {
-          "error": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["code", "message", "request_id"],
-            "properties": {
-              "code": {
-                "$ref": "#/components/schemas/ErrorCode"
-              },
-              "message": {
-                "type": "string",
-                "description": "人类可读的错误描述"
-              },
-              "request_id": {
-                "type": "string",
-                "minLength": 40,
-                "maxLength": 40,
-                "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                "description": "请求唯一标识，以 `req_` 开头的 UUIDv4"
-              }
-            }
+          "format": {
+            "type": "string"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "size": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
           }
-        }
+        },
+        "type": "object"
       },
-      "ErrorCode": {
-        "type": "string",
-        "description": "错误码",
-        "enum": [
-          "validation_error",
-          "invalid_api_key",
-          "revoked_api_key",
-          "insufficient_scope",
-          "idempotency_conflict",
-          "operation_in_doubt",
-          "rate_limit_exceeded",
-          "internal_error",
-          "upstream_unavailable",
-          "audit_unavailable",
-          "not_found"
-        ]
+      "HustodayPage": {
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "posts": {
+            "items": {
+              "$ref": "#/components/schemas/HustodayPost"
+            },
+            "type": "array"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "HustodayPost": {
+        "properties": {
+          "author_avatar": {
+            "format": "uri",
+            "type": "string"
+          },
+          "author_id": {
+            "type": "string"
+          },
+          "author_nickname": {
+            "type": "string"
+          },
+          "comment_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "content": {
+            "type": "string"
+          },
+          "date_modified": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "favorite_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/HustodayAsset"
+            },
+            "type": "array"
+          },
+          "is_commented": {
+            "type": "boolean"
+          },
+          "is_favorited": {
+            "type": "boolean"
+          },
+          "is_following_author": {
+            "type": "boolean"
+          },
+          "is_liked": {
+            "type": "boolean"
+          },
+          "like_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "publish_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "view_count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "HustodaySearchPage": {
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/HustodayPost"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "query": {
+            "type": "string"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MessageIDs": {
+        "properties": {
+          "message_ids": {
+            "items": {
+              "format": "int64",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "message_ids"
+        ],
+        "type": "object"
+      },
+      "WikiCategory": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WikiCollection": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/WikiCreator"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WikiCollectionResults": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WikiCollection"
+            },
+            "type": "array"
+          },
+          "paging": {
+            "$ref": "#/components/schemas/WikiPaging"
+          }
+        },
+        "type": "object"
+      },
+      "WikiCreator": {
+        "properties": {
+          "avatar": {
+            "format": "uri",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WikiFile": {
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "downloads": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "preview_urls": {
+            "items": {
+              "format": "uri",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "size": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "WikiPage": {
+        "properties": {
+          "anonymous": {
+            "type": "boolean"
+          },
+          "category": {
+            "$ref": "#/components/schemas/WikiCategory"
+          },
+          "category_id": {
+            "type": "string"
+          },
+          "collection_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/WikiCreator"
+          },
+          "description": {
+            "type": "string"
+          },
+          "favourites": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "likes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "total_downloads": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total_size": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "views": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "WikiPageDetail": {
+        "properties": {
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/WikiCollection"
+            },
+            "type": "array"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/WikiFile"
+            },
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/WikiPage"
+          },
+          "preview_urls": {
+            "items": {
+              "format": "uri",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "WikiPageResults": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WikiPage"
+            },
+            "type": "array"
+          },
+          "paging": {
+            "$ref": "#/components/schemas/WikiPaging"
+          }
+        },
+        "type": "object"
+      },
+      "WikiPaging": {
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "WikiSearchResult": {
+        "properties": {
+          "collections": {
+            "$ref": "#/components/schemas/WikiCollectionResults"
+          },
+          "pages": {
+            "$ref": "#/components/schemas/WikiPageResults"
+          },
+          "query": {
+            "type": "string"
+          }
+        },
+        "type": "object"
       }
     },
-    "parameters": {
-      "XRequestID": {
-        "name": "X-Request-ID",
-        "in": "header",
-        "required": false,
-        "description": "以 `req_` 开头的标准 UUIDv4；其他格式的值会被替换。",
-        "schema": {
-          "type": "string",
-          "minLength": 40,
-          "maxLength": 40,
-          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-        }
+    "securitySchemes": {
+      "bearerAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "面向 API Key 所有者的冰岩能力接口。完整能力列表按当前后端合约同步；部分上游能力未配置或暂不可用时会返回 503。所有接口使用 Bearer API Key，并通过后端 Scope 控制访问权限。",
+    "title": "Open Bingyan API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/badminton/{path}": {
+      "get": {
+        "operationId": "readBadminton",
+        "responses": {
+          "200": {
+            "description": "Badminton response"
+          }
+        },
+        "summary": "读取自己的羽球资料或活动"
       },
-      "IdempotencyKey": {
-        "name": "Idempotency-Key",
-        "in": "header",
-        "required": true,
-        "description": "可打印的 ASCII Key，以带密钥摘要形式保留 24 小时。",
-        "schema": {
-          "type": "string",
-          "minLength": 8,
-          "maxLength": 128,
-          "pattern": "^[\\x20-\\x7E]{8,128}$"
+      "parameters": [
+        {
+          "in": "path",
+          "name": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
+      ],
+      "post": {
+        "operationId": "writeBadminton",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "summary": "修改资料或管理自己的活动"
       }
     },
-    "responses": {
-      "BadRequest": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "validation_error",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
+    "/v1/courses/assessments": {
+      "delete": {
+        "operationId": "deleteMyAssessments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
               }
             }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted"
           }
-        }
+        },
+        "summary": "删除自己的课程评价"
       },
-      "Unauthorized": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "invalid_api_key",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
+      "get": {
+        "operationId": "listMyAssessments",
+        "responses": {
+          "200": {
+            "description": "Assessments"
+          }
+        },
+        "summary": "获取自己的课程评价"
+      }
+    },
+    "/v1/courses/assessments/{path}": {
+      "delete": {
+        "operationId": "deleteAssessmentAction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
               }
             }
           }
-        }
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "删除评价回复或取消审批"
       },
-      "Forbidden": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "insufficient_scope",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
-              }
-            }
+      "get": {
+        "operationId": "getAssessmentOrPublicAssessmentList",
+        "responses": {
+          "200": {
+            "description": "Assessment result"
           }
-        }
+        },
+        "summary": "获取评价详情或公共评价列表"
       },
-      "Conflict": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "idempotency_conflict",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
-              }
-            }
+      "parameters": [
+        {
+          "in": "path",
+          "name": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
           }
         }
+      ],
+      "post": {
+        "operationId": "writeAssessmentAction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "summary": "创建评价、回复或审批"
+      }
+    },
+    "/v1/courses/completed": {
+      "get": {
+        "operationId": "listCompletedCourses",
+        "responses": {
+          "200": {
+            "description": "Completed courses"
+          }
+        },
+        "summary": "获取自己的已修课程"
       },
-      "TooManyRequests": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "rate_limit_exceeded",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
+      "post": {
+        "operationId": "updateCompletedCourses",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array"
               }
             }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
           }
-        }
+        },
+        "summary": "更新自己的已修课程"
+      }
+    },
+    "/v1/courses/detail": {
+      "get": {
+        "operationId": "getCourseDetail",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "teacher",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course detail"
+          },
+          "400": {
+            "description": "Invalid course query"
+          },
+          "503": {
+            "description": "Course upstream unavailable"
+          }
+        },
+        "summary": "获取课程详情及自己的评价状态"
+      }
+    },
+    "/v1/courses/favorites": {
+      "delete": {
+        "operationId": "deleteCourseFavorites",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "批量删除自己的课程收藏"
       },
-      "InternalServerError": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
+      "get": {
+        "operationId": "listCourseFavorites",
+        "responses": {
+          "200": {
+            "description": "Favorite courses"
+          }
+        },
+        "summary": "获取自己的课程收藏"
+      }
+    },
+    "/v1/courses/favorites/{course_name}/{teacher}": {
+      "delete": {
+        "operationId": "deleteCourseFavorite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_name",
+            "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "example": {
-              "error": {
-                "code": "internal_error",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
-              }
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "teacher",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "取消收藏课程"
       },
-      "ServiceUnavailable": {
-        "description": "稳定的公开错误结构，HTTP 状态码和错误码共同标识失败类别。",
-        "content": {
-          "application/json": {
+      "post": {
+        "operationId": "addCourseFavorite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_name",
+            "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "teacher",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Added"
+          }
+        },
+        "summary": "收藏课程"
+      }
+    },
+    "/v1/courses/hot": {
+      "get": {
+        "operationId": "listHotCourses",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hot course result"
+          },
+          "400": {
+            "description": "Invalid limit"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          }
+        },
+        "summary": "获取热门课程"
+      }
+    },
+    "/v1/courses/hot-search": {
+      "get": {
+        "operationId": "listHotCourseSearches",
+        "responses": {
+          "200": {
+            "description": "Hot course search terms"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          }
+        },
+        "summary": "获取热门课程搜索词"
+      }
+    },
+    "/v1/courses/names": {
+      "get": {
+        "operationId": "listCourseNames",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseNamesResult"
+                }
+              }
             },
-            "example": {
-              "error": {
-                "code": "upstream_unavailable",
-                "message": "The request is invalid.",
-                "request_id": "req_00000000-0000-4000-8000-000000000000"
+            "description": "Course name list"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          }
+        },
+        "summary": "获取公开课程名称"
+      }
+    },
+    "/v1/courses/search": {
+      "get": {
+        "operationId": "searchCourses",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "keyword",
+            "required": true,
+            "schema": {
+              "maxLength": 50,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course search result"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          }
+        },
+        "summary": "搜索公开课程"
+      }
+    },
+    "/v1/courses/teachers": {
+      "get": {
+        "operationId": "listCourseTeachers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Teacher list"
+          },
+          "400": {
+            "description": "Invalid course name"
+          }
+        },
+        "summary": "获取课程教师"
+      }
+    },
+    "/v1/feedback/{path}": {
+      "get": {
+        "operationId": "readFeedback",
+        "responses": {
+          "200": {
+            "description": "Feedback response"
+          }
+        },
+        "summary": "查询自己的反馈"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "writeFeedback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object"
               }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Feedback response"
+          }
+        },
+        "summary": "提交反馈或上传附件"
+      }
+    },
+    "/v1/foodie/graphql": {
+      "post": {
+        "operationId": "foodieGraphQL",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "GraphQL response"
+          }
+        },
+        "summary": "执行吃什么公共 GraphQL 查询"
+      }
+    },
+    "/v1/hustoday/comments": {
+      "post": {
+        "operationId": "createHustodayComment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Comment"
+          }
+        },
+        "summary": "发布 Hustoday 评论"
+      }
+    },
+    "/v1/hustoday/comments/{path}": {
+      "delete": {
+        "operationId": "deleteOrUnlikeHustodayComment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "summary": "删除评论或取消点赞"
+      },
+      "get": {
+        "operationId": "listHustodayCommentReplies",
+        "responses": {
+          "200": {
+            "description": "Reply page"
+          }
+        },
+        "summary": "获取评论回复"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
+      ],
+      "post": {
+        "operationId": "writeHustodayCommentAction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "summary": "回复或举报评论"
+      },
+      "put": {
+        "operationId": "likeHustodayComment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Like result"
+          }
+        },
+        "summary": "点赞评论"
+      }
+    },
+    "/v1/hustoday/follow": {
+      "delete": {
+        "operationId": "unfollowHustodayUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Follow result"
+          }
+        },
+        "summary": "取消关注 Hustoday 用户"
+      },
+      "put": {
+        "operationId": "followHustodayUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Follow result"
+          }
+        },
+        "summary": "关注 Hustoday 用户"
+      }
+    },
+    "/v1/hustoday/posts": {
+      "delete": {
+        "operationId": "deleteHustodayPost",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted post"
+          }
+        },
+        "summary": "删除自己的 Hustoday 帖子"
+      },
+      "get": {
+        "operationId": "listHustodayPosts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HustodayPage"
+                }
+              }
+            },
+            "description": "Hustoday post page"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          },
+          "503": {
+            "description": "Hustoday is not configured or unavailable"
+          }
+        },
+        "summary": "读取 Hustoday 公共信息流"
+      },
+      "post": {
+        "operationId": "createHustodayPost",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created post"
+          }
+        },
+        "summary": "发布 Hustoday 帖子"
+      },
+      "put": {
+        "operationId": "updateHustodayPost",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated post"
+          }
+        },
+        "summary": "更新自己的 Hustoday 帖子"
+      }
+    },
+    "/v1/hustoday/posts/{post_id}/comments": {
+      "get": {
+        "operationId": "listHustodayPostComments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment page"
+          }
+        },
+        "summary": "获取帖子评论"
+      }
+    },
+    "/v1/hustoday/posts/{post_id}/favorite": {
+      "delete": {
+        "operationId": "unfavoriteHustodayPost",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite result"
+          }
+        },
+        "summary": "取消 Hustoday 帖子收藏"
+      },
+      "put": {
+        "operationId": "favoriteHustodayPost",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite result"
+          }
+        },
+        "summary": "收藏 Hustoday 帖子"
+      }
+    },
+    "/v1/hustoday/posts/{post_id}/like": {
+      "delete": {
+        "operationId": "unlikeHustodayPost",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like result"
+          }
+        },
+        "summary": "取消 Hustoday 帖子点赞"
+      },
+      "put": {
+        "operationId": "likeHustodayPost",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like result"
+          }
+        },
+        "summary": "点赞 Hustoday 帖子"
+      }
+    },
+    "/v1/hustoday/search": {
+      "get": {
+        "operationId": "searchHustoday",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HustodaySearchPage"
+                }
+              }
+            },
+            "description": "Hustoday search page"
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          },
+          "503": {
+            "description": "Hustoday is not configured or unavailable"
+          }
+        },
+        "summary": "搜索 Hustoday 公共内容"
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "Profile"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          }
+        },
+        "summary": "读取自己的公开资料"
+      }
+    },
+    "/v1/me/hustoday/{path}": {
+      "get": {
+        "operationId": "getMyHustodayData",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "liked-posts",
+                "favorited-posts",
+                "following",
+                "followers",
+                "following-posts"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personal Hustoday data"
+          }
+        },
+        "summary": "获取自己的 Hustoday 关系或互动数据"
+      }
+    },
+    "/v1/me/notifications": {
+      "delete": {
+        "operationId": "deleteNotifications",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageIDs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Notifications deleted"
+          }
+        },
+        "summary": "删除自己的通知"
+      },
+      "get": {
+        "operationId": "listNotifications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "read",
+                "unread"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification page"
+          }
+        },
+        "summary": "查询自己的通知"
+      },
+      "post": {
+        "operationId": "createNotification",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotification"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Notification created"
+          },
+          "409": {
+            "description": "Idempotency conflict or unknown outcome"
+          }
+        },
+        "summary": "创建自己的通知"
+      }
+    },
+    "/v1/me/notifications/read": {
+      "post": {
+        "operationId": "markNotificationsRead",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageIDs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Notifications marked as read"
+          }
+        },
+        "summary": "将自己的通知标记为已读"
+      }
+    },
+    "/v1/me/wiki/{path}": {
+      "get": {
+        "operationId": "getMyWikiData",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "comments",
+                "favourites",
+                "followings",
+                "followers"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personal Wiki data"
+          }
+        },
+        "summary": "获取自己的 Wiki 评论、收藏和关注数据"
+      }
+    },
+    "/v1/schedule/terms": {
+      "get": {
+        "operationId": "listScheduleTerms",
+        "responses": {
+          "200": {
+            "description": "Terms"
+          }
+        },
+        "summary": "获取自己的课表学期"
+      }
+    },
+    "/v1/schedule/terms/{term_id}": {
+      "delete": {
+        "operationId": "deleteScheduleTerm",
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "删除自己的学期课表"
+      },
+      "get": {
+        "operationId": "getScheduleTerm",
+        "responses": {
+          "200": {
+            "description": "Term data"
+          }
+        },
+        "summary": "获取自己的学期课表"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "term_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "operationId": "putScheduleTerm",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "summary": "写入自己的学期课表"
+      }
+    },
+    "/v1/wiki/categories": {
+      "get": {
+        "operationId": "listWikiCategories",
+        "responses": {
+          "200": {
+            "description": "Categories"
+          }
+        },
+        "summary": "获取 Wiki 分类"
+      }
+    },
+    "/v1/wiki/collections": {
+      "get": {
+        "operationId": "listWikiCollections",
+        "responses": {
+          "200": {
+            "description": "Collections"
+          }
+        },
+        "summary": "获取 Wiki 合集"
+      }
+    },
+    "/v1/wiki/collections/{collection_id}": {
+      "get": {
+        "operationId": "getWikiCollection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection detail"
+          }
+        },
+        "summary": "获取 Wiki 合集详情"
+      }
+    },
+    "/v1/wiki/comments/{comment_id}": {
+      "delete": {
+        "operationId": "deleteWikiComment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "删除自己的 Wiki 评论"
+      }
+    },
+    "/v1/wiki/files/{file_id}/download": {
+      "get": {
+        "operationId": "downloadWikiFile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upstream file response"
+          }
+        },
+        "summary": "下载 Wiki 文件"
+      }
+    },
+    "/v1/wiki/pages/{page_id}": {
+      "get": {
+        "operationId": "getWikiPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiPageDetail"
+                }
+              }
+            },
+            "description": "Wiki public page detail"
+          },
+          "400": {
+            "description": "Invalid page ID"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          },
+          "404": {
+            "description": "Page not found"
+          },
+          "503": {
+            "description": "Wiki is not configured or unavailable"
+          }
+        },
+        "summary": "读取 1037wiki 公共页面详情"
+      }
+    },
+    "/v1/wiki/pages/{page_id}/comments": {
+      "get": {
+        "operationId": "listWikiPageComments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comments"
+          }
+        },
+        "summary": "获取 Wiki 页面评论"
+      },
+      "post": {
+        "operationId": "createWikiPageComment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Comment"
+          }
+        },
+        "summary": "发布 Wiki 页面评论"
+      }
+    },
+    "/v1/wiki/pages/{page_id}/favourite": {
+      "delete": {
+        "operationId": "unfavoriteWikiPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite result"
+          }
+        },
+        "summary": "取消 Wiki 页面收藏"
+      },
+      "get": {
+        "operationId": "favoriteWikiPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite result"
+          }
+        },
+        "summary": "收藏 Wiki 页面"
+      }
+    },
+    "/v1/wiki/pages/{page_id}/like": {
+      "delete": {
+        "operationId": "unlikeWikiPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like result"
+          }
+        },
+        "summary": "取消 Wiki 页面点赞"
+      },
+      "get": {
+        "operationId": "likeWikiPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like result"
+          }
+        },
+        "summary": "点赞 Wiki 页面"
+      }
+    },
+    "/v1/wiki/search": {
+      "get": {
+        "operationId": "searchWiki",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiSearchResult"
+                }
+              }
+            },
+            "description": "Wiki public search result"
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "403": {
+            "description": "Missing scope"
+          },
+          "503": {
+            "description": "Wiki is not configured or unavailable"
+          }
+        },
+        "summary": "搜索 1037wiki 公共页面和合集"
+      }
+    },
+    "/v1/wiki/users/{user_id}/follow": {
+      "delete": {
+        "operationId": "unfollowWikiUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Follow result"
+          }
+        },
+        "summary": "取消关注 Wiki 用户"
+      },
+      "post": {
+        "operationId": "followWikiUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Follow result"
+          }
+        },
+        "summary": "关注 Wiki 用户"
       }
     }
   },
@@ -365,201 +1958,10 @@
       "bearerAuth": []
     }
   ],
-  "tags": [
+  "servers": [
     {
-      "name": "账号与身份",
-      "description": "读取与当前 Client 所代表 User 关联的公开身份资料。"
-    },
-    {
-      "name": "个人通知",
-      "description": "读取自己的通知，或从个人工具向自己发送提醒。"
+      "url": "https://open-dev-api.bingyan.net",
+      "description": "Open Bingyan 开发 API"
     }
-  ],
-  "paths": {
-    "/v1/me": {
-      "get": {
-        "operationId": "profile.get",
-        "tags": ["账号与身份"],
-        "summary": "读取 API Key 所有者的公开资料",
-        "description": "返回与已认证 API Key 所有者关联的冰岩公开资料。\n\n**所需 Scope**：`profile:self:read`",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/XRequestID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "公开资料",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Profile"
-                },
-                "example": {
-                  "id": "cid-example",
-                  "nickname": "Example member",
-                  "avatar": "https://open.bingyan.net/assets/avatar-placeholder.png",
-                  "introduction": "Bingyan member",
-                  "role": "member",
-                  "major": "Computer Science",
-                  "campus": "Main campus"
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/TooManyRequests" },
-          "500": { "$ref": "#/components/responses/InternalServerError" },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
-        }
-      }
-    },
-    "/v1/me/notifications": {
-      "get": {
-        "operationId": "notifications.list",
-        "tags": ["个人通知"],
-        "summary": "查询 API Key 所有者的 Open Bingyan 通知",
-        "description": "分页返回属于已认证 API Key 所有者的通知。\n\n**所需 Scope**：`notifications:self:read`",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          { "$ref": "#/components/parameters/XRequestID" },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "description": "从 1 开始的页码。",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 2147483647,
-              "default": 1
-            },
-            "example": 1
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "description": "每页返回的通知数量。",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 50,
-              "default": 20
-            },
-            "example": 20
-          },
-          {
-            "name": "filter",
-            "in": "query",
-            "required": false,
-            "description": "按已读状态筛选通知。",
-            "schema": {
-              "type": "string",
-              "enum": ["all", "read", "unread"],
-              "default": "all"
-            },
-            "example": "all"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API Key 所有者的通知分页",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotificationPage"
-                },
-                "example": {
-                  "items": [
-                    {
-                      "message_id": 1001,
-                      "title": "Build completed",
-                      "body": "Your requested build has completed.",
-                      "data": { "source": "build" },
-                      "read": false
-                    }
-                  ],
-                  "page": 1,
-                  "page_size": 20,
-                  "total": 1
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/TooManyRequests" },
-          "500": { "$ref": "#/components/responses/InternalServerError" },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
-        }
-      },
-      "post": {
-        "operationId": "notifications.create",
-        "tags": ["个人通知"],
-        "summary": "向 API Key 所有者发送通知",
-        "description": "为已认证 API Key 所有者创建站内或推送通知。\n\n**所需 Scope**：`notifications:self:write`",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          { "$ref": "#/components/parameters/XRequestID" },
-          { "$ref": "#/components/parameters/IdempotencyKey" }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateNotificationRequest"
-              },
-              "example": {
-                "title": "Build completed",
-                "body": "Your requested build has completed.",
-                "data": { "source": "build" },
-                "delivery": "in_app"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "通知已被 Push 服务接受",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreatedNotification"
-                },
-                "example": {
-                  "message_id": 1001,
-                  "delivery": "in_app"
-                }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "429": { "$ref": "#/components/responses/TooManyRequests" },
-          "500": { "$ref": "#/components/responses/InternalServerError" },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
-        }
-      }
-    }
-  }
+  ]
 }

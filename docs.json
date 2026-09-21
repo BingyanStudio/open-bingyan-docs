@@ -28,7 +28,6 @@
       {
         "language": "cn",
         "default": true,
-        "hidden": true,
         "groups": [
           {
             "group": "开始使用",
@@ -36,6 +35,12 @@
               "index",
               "quickstart"
             ]
+          }
+        ],
+        "tabs": [
+          {
+            "tab": "API Reference",
+            "openapi": "openapi.json"
           }
         ]
       }
@@ -49,7 +54,7 @@
     "primary": {
       "type": "button",
       "label": "控制台",
-      "href": "/console"
+      "href": "https://open-dev.bingyan.net/console/"
     }
   },
   "contextual": {
@@ -71,6 +76,12 @@
     "playground": {
       "display": "interactive"
     },
-    "url": "full"
+    "url": "full",
+    "mdx": {
+      "server": "https://open-dev-api.bingyan.net",
+      "auth": {
+        "method": "bearer"
+      }
+    }
   }
 }
