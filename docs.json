@@ -39,7 +39,7 @@
           {
             "group": "接入方式",
             "pages": [
-              "mcp",
+              "mcp-tools",
               "capabilities"
             ]
           }
