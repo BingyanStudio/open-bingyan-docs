@@ -3,29 +3,33 @@ title: "冰岩开放平台"
 description: "把校内服务能力接入你的 Agent、脚本和应用"
 ---
 
-冰岩开放平台提供统一的 API Key 认证入口，把冰岩作坊各产品的能力整理成可以直接调用的接口。你只需要创建一把 Key，再按接口要求选择 Scope。
+冰岩开放平台把冰岩作坊各产品的能力整理成一把 API Key 就能调用的接口，并提供同一把 Key 可用的 MCP 服务器。课程评价、学习资料、校园动态、你自己的课表——接进你的 Agent、脚本或应用。
 
-<CardGroup cols={2}>
-  <Card title="先跑通一次 API" icon="play" href="/quickstart">
-    创建一把专用 Key，按指南发起你的第一条请求。
+<CardGroup cols={3}>
+  <Card title="第一次调用" icon="play" href="/quickstart">
+    创建一把 Key，三分钟内在 Agent 或 curl 里看到真实数据。
   </Card>
-  <Card title="管理 API Key" icon="key" href="https://open-dev.bingyan.net/console/">
-    登录控制台，创建按用途隔离、可独立撤销的开发凭证。
+  <Card title="MCP 工具" icon="robot" href="/mcp">
+    Claude Code、Cursor、Codex、WorkBuddy 一行配置接入 12 个校园工具。
+  </Card>
+  <Card title="能力与权限" icon="key" href="/capabilities">
+    每个接口家族需要哪个 Scope，建 Key 时一次勾对。
   </Card>
 </CardGroup>
 
 ## 当前已接入的能力
 
-| 能力 | 主要用途 |
-| --- | --- |
-| 账号与身份 | 读取当前 API Key 所有者的公开资料 |
-| 课程与课表 | 搜索课程，读取收藏、已修课程、评价和学期课表 |
-| Hustoday | 查询、发布和管理信息流、评论、点赞、收藏与关注 |
-| 1037 Wiki | 搜索页面、合集、分类、评论、互动和文件下载 |
-| 羽毛球与吃货 | 调用羽毛球服务和 Foodie GraphQL 能力 |
-| 通知与反馈 | 查询和管理个人通知，提交反馈 |
+| 能力 | 来自哪个产品 | 主要用途 |
+| --- | --- | --- |
+| 课程与评价 | 爱选修 | 搜索公选课，看学生评价、点名/考核/作业情况、上课时间 |
+| 课表 | Hustoday 课表同步 | 读取你同步过的学期课表；MCP 直接给出某天/某周的课和时间 |
+| 校园动态 | Hustoday | 浏览、搜索、发布和互动 |
+| 学习资料 | 1037wiki | 搜索往年试卷、笔记、课件，读取资料页和文件 |
+| 羽球约球 | 羽球平台 | 查看和参与约球活动 |
+| 吃什么 | Foodie | 公共 GraphQL 查询 |
+| 通知、反馈、资料 | Hustoday | 个人通知、提交反馈、读取自己的公开资料 |
 
-完整的路径、参数、响应、认证方式和可交互示例见 **API Reference**。接口对应的上游服务未配置或暂时不可用时，会返回 `503`，具体以响应为准。
+完整的路径、参数、响应和可交互示例见 **API Reference**；每个路径需要的 Scope 见[能力与权限](/capabilities)。
 
 <Note>
   请勿把 API Key 放入公开仓库或前端代码。

@@ -1,0 +1,86 @@
+---
+title: "能力与权限"
+description: "每个接口家族需要哪个 Scope，以及它背后是哪个冰岩产品"
+---
+
+API Key 的 Scope 在创建时确定。下表按接口家族列出所需 Scope，方便你在建 Key 时一次勾对；参数和响应格式见 [API Reference](/api-reference)。
+
+Scope 命名规则：`<产品>:<public|self>:<read|write>`。`public` 是所有人都能看到的数据；`self` 只涉及 Key 所有者本人，服务端会以你的身份去上游取数，不接受任何指定他人的参数。
+
+## 课程（爱选修）
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/courses/search` `names` `hot-search` `hot` `detail` `teachers` | `courses:public:read` |
+| `GET /v1/courses/assessments/hot` `assessments/approved` | `courses:public:read` |
+| `GET /v1/courses/favorites` `completed` `assessments` `assessments/{id}` | `courses:self:read` |
+| `POST/DELETE` 收藏、已修、评价、点赞、举报、回复 | `courses:self:write` |
+
+`detail` 和 `teachers` 虽然是公开数据，平台仍会以 Key 所有者身份签名请求（爱选修需要一个用户上下文来返回收藏/已修标记）。
+
+## 课表（Hustoday 课表同步）
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/schedule/terms`、`GET /v1/schedule/terms/{term_id}` | `schedule:self:read` |
+| `PUT/DELETE /v1/schedule/terms/{term_id}` | `schedule:self:write` |
+
+原始接口返回 Hustoday App 上传的学期 JSON（课程、课时、自定义日程）。想直接拿到"某天有哪些课、几点上"，用 [MCP 工具](/mcp) `my_timetable`。
+
+## Hustoday 校园动态
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/hustoday/posts` `search` `posts/{id}/comments` `comments/{id}/replies` `users/{id}/info|following|followers` | `hustoday:public:read` |
+| `GET /v1/me/hustoday/liked-posts` `favorited-posts` `following` `followers` `following-posts` | `hustoday:self:read` |
+| 发帖、评论、回复、点赞、收藏、关注、举报（`POST/PUT/DELETE`） | `hustoday:self:write` |
+
+## 1037wiki 学习资料
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/wiki/search` `pages/{id}` `pages/{id}/comments` `categories` `collections` `collections/{id}` | `wiki:public:read` |
+| `GET /v1/wiki/pages/{id}/like|favourite`（注意：GET 即执行点赞/收藏，沿用上游语义） | `wiki:self:read` |
+| `GET /v1/me/wiki/comments` `favourites` `followings` `followers`、`GET /v1/wiki/files/{id}/download` | `wiki:self:read` |
+| 发评论、删评论、取消点赞/收藏、关注 | `wiki:self:write` |
+
+## 羽球约球
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/badminton/user/info` `match` `match/matches` | `badminton:self:read` |
+| `POST /v1/badminton/user/update` `match/new|del|update|apply|allow|reject|remove|leave` 等 | `badminton:self:write` |
+
+羽球服务的所有接口都需要你在它那里有账号；没有时上游返回 `500 Failed to get user`。
+
+## 吃什么（Foodie）
+
+| 接口 | Scope |
+| --- | --- |
+| `POST /v1/foodie/graphql`（公共 query） | `foodie:public:read` |
+
+## 反馈、通知、资料
+
+| 接口 | Scope |
+| --- | --- |
+| `GET /v1/feedback/list` `detail/{id}` | `feedback:self:read` |
+| `POST /v1/feedback/submit` `upload` | `feedback:self:write` |
+| `GET /v1/me/notifications` | `notifications:self:read` |
+| `POST /v1/me/notifications`（需 `Idempotency-Key`）、`POST /v1/me/notifications/read`、`DELETE /v1/me/notifications` | `notifications:self:write` |
+| `GET /v1/me` | `profile:self:read` |
+
+## 错误码
+
+所有平台错误都是 `{"error":{"code":"…","message":"…"}}`：
+
+| HTTP | code | 含义 |
+| --- | --- | --- |
+| 400 | `validation_error` `invalid_scope` | 参数为空、超长或格式不对 |
+| 401 | `invalid_api_key` `revoked_api_key` | Key 不完整、环境不匹配或已撤销 |
+| 403 | `insufficient_scope` | Key 没有该接口要求的 Scope |
+| 404 | `not_found` | 路径不存在或对象不存在 |
+| 405 | `method_not_allowed` | 方法不对 |
+| 409 | `operation_in_progress` `operation_in_doubt` | 幂等写操作重放冲突 |
+| 503 | `upstream_unavailable` | 上游未配置或无响应 |
+
+上游产品自身的错误会带着它原本的状态码和响应体透传，不会被包装成上面的格式。

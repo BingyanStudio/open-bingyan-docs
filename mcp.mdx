@@ -1,0 +1,100 @@
+---
+title: "MCP 工具"
+description: "把华科的课程评价、资料库、校园动态和你的课表接进任何支持 MCP 的 Agent"
+---
+
+冰岩开放平台提供一个远程 MCP（Model Context Protocol）服务器。它和 REST API 用同一把 API Key、同一套 Scope，只是把能力包装成 Agent 能直接调用的工具，不需要你写任何 HTTP 代码。
+
+```text
+https://open-dev-api.bingyan.net/mcp
+```
+
+- 传输：Streamable HTTP，无状态。每个请求独立鉴权，服务端不保存会话。
+- 鉴权：请求头 `Authorization: Bearer <API Key>`。没有 OAuth 弹窗，因为 Key 本身就代表你。
+- 协议版本：2024-11-05 到 2026-07-28 都支持，客户端自动协商。
+- 所有工具当前都是只读的。写操作（发帖、收藏、约球）仍走 REST API 对应的 `*:self:write` Scope。
+
+## 接入
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http open-bingyan https://open-dev-api.bingyan.net/mcp \
+      --header "Authorization: Bearer byk_test_你的Key"
+    ```
+    加 `--scope project` 会写进当前仓库的 `.mcp.json`，和同学共享配置时记得各自用自己的 Key。
+  </Tab>
+  <Tab title="Cursor / Codex / 其他">
+    在对应的 MCP 配置文件里加一个 HTTP 服务器：
+    ```json
+    {
+      "mcpServers": {
+        "open-bingyan": {
+          "type": "http",
+          "url": "https://open-dev-api.bingyan.net/mcp",
+          "headers": { "Authorization": "Bearer byk_test_你的Key" }
+        }
+      }
+    }
+    ```
+    Cursor 是 `~/.cursor/mcp.json`，Codex 是 `~/.codex/config.toml`（`[mcp_servers.open-bingyan]`，`url` 和 `http_headers`）。
+  </Tab>
+  <Tab title="手动验证">
+    ```bash
+    curl -s https://open-dev-api.bingyan.net/mcp \
+      -H "Authorization: Bearer byk_test_你的Key" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json, text/event-stream" \
+      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+    ```
+    看到 `search_courses` 等 12 个工具就通了。
+  </Tab>
+</Tabs>
+
+## 工具一览
+
+<Note>
+  每个工具都标了所需 Scope。Key 缺少该 Scope 时，工具返回 `insufficient_scope` 错误并附带一个带预选 Scope 的控制台链接，Agent 会把它转给你。工具列表本身不按 Scope 过滤，方便 Agent 解释"能做但没授权"的情况。
+</Note>
+
+### 公开数据
+
+| 工具 | 做什么 | Scope |
+| --- | --- | --- |
+| `search_courses` | 按课程名或老师名模糊搜索爱选修上的课程（以公选课、体育课为主，约 2000 门），返回学分、类别、评价数和 quality_score | `courses:public:read` |
+| `hot_courses` | 当前搜索最多的课程 | `courses:public:read` |
+| `course_detail` | 一门课的完整词条：点名/考核/作业情况、上课时间地点、好评/一般/差评计数、每条学生评价 | `courses:public:read` |
+| `search_wiki` | 搜索 1037wiki 学习资料（往年试卷、笔记、课件），返回资料页元数据 | `wiki:public:read` |
+| `wiki_page` | 一个资料页的文件列表、预览图和所属合集 | `wiki:public:read` |
+| `hustoday_feed` | Hustoday 最新公开动态 | `hustoday:public:read` |
+| `search_hustoday` | 全文搜索 Hustoday 帖子 | `hustoday:public:read` |
+
+<Tip>
+  爱选修的 `quality_score` 是 0–2 的加权平均，**越低越好**（0 表示所有评价都是"很赞"）。工具说明里已经写明，Agent 不会弄反；你自己写代码读 REST 的 `quality` 字段时请注意同样的语义。
+</Tip>
+
+### 你本人的数据
+
+| 工具 | 做什么 | Scope |
+| --- | --- | --- |
+| `my_terms` | 你在 Hustoday 里同步过的学期列表，标出当前学期 | `schedule:self:read` |
+| `my_timetable` | 某一天（默认今天）的课和自定义日程，含教学周、节次和上下课时间 | `schedule:self:read` |
+| `my_week` | 某一教学周（默认本周）的全部课程 | `schedule:self:read` |
+| `badminton_matches` | 羽球平台上你可见的约球活动 | `badminton:self:read` |
+| `me` | Key 所有者的公开资料（昵称、专业、校区） | `profile:self:read` |
+
+课表工具的前提是你在 Hustoday App 里同步过课表；没同步过会返回 `not_found: no synced terms`。上下课时间按华科的节次表推算（5–9 月夏季作息，其余冬季作息）。
+
+## 一些好用的问法
+
+- "这学期公选课里评价最好的历史类课程是哪几门？点名严不严？"
+- "帮我找一下一元分析的往年试卷。"
+- "我明天上午有课吗？第一节几点？"
+- "本周哪天下午是空的？"
+- "Hustoday 上最近有人发羽毛球约球吗？"
+
+## 边界
+
+- 服务端不做跨用户查询：`my_*` 永远是 Key 所有者本人的数据，工具没有 `cid` 参数。
+- 没有限流承诺。请把 Agent 的 Key 单独建一把，出问题直接撤销。
+- 这是测试环境入口。正式环境上线后地址会换成 `https://open-api.bingyan.net/mcp`，Key 也需要在正式控制台重新创建。
