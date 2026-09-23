@@ -80,6 +80,7 @@ Scope 命名规则：`<产品>:<public|self>:<read|write>`。`public` 是所有�
 | 403 | `insufficient_scope` | Key 没有该接口要求的 Scope |
 | 404 | `not_found` | 路径不存在或对象不存在 |
 | 405 | `method_not_allowed` | 方法不对 |
+| 429 | `rate_limit_exceeded` | 这把 Key 一分钟内超过 120 次调用；看 `Retry-After` |
 | 409 | `operation_in_progress` `operation_in_doubt` | 幂等写操作重放冲突 |
 | 503 | `upstream_unavailable` | 上游未配置或无响应 |
 

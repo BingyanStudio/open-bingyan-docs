@@ -47,7 +47,7 @@ https://open-dev-api.bingyan.net/mcp
       -H "Accept: application/json, text/event-stream" \
       -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
     ```
-    看到 `search_courses` 等 12 个工具就通了。
+    看到 `search_courses` 等 13 个工具就通了。
   </Tab>
 </Tabs>
 
@@ -56,6 +56,14 @@ https://open-dev-api.bingyan.net/mcp
 <Note>
   每个工具都标了所需 Scope。Key 缺少该 Scope 时，工具返回 `insufficient_scope` 错误并附带一个带预选 Scope 的控制台链接，Agent 会把它转给你。工具列表本身不按 Scope 过滤，方便 Agent 解释"能做但没授权"的情况。
 </Note>
+
+### 只有这里能答的
+
+| 工具 | 做什么 | Scope |
+| --- | --- | --- |
+| `find_free_electives` | 把你在 Hustoday 同步的课表折成爱选修的时间占用位图，只返回**至少有一个课堂不和你课表冲突**的公选课，按评价从好到差排序；可选 `keyword` / `target` 缩小范围 | `courses:public:read` + `schedule:self:read` |
+
+这是两个产品的数据在一次调用里相遇：爱选修有评价和上课时间但没有你的课表，Hustoday 课表里没有评价。个人开发者拿不到这两份数据的合法组合。结果只保证"有一个课堂不冲突"，具体哪个课堂空着要再看 `course_detail` 的 `classes`。
 
 ### 公开数据
 
@@ -85,8 +93,20 @@ https://open-dev-api.bingyan.net/mcp
 
 课表工具的前提是你在 Hustoday App 里同步过课表；没同步过会返回 `not_found: no synced terms`。上下课时间按华科的节次表推算，冬季/夏季作息由学期数据自带的 season 决定（秋季学期用冬季表）。
 
+## 服务端 Prompt
+
+服务器还带两个 prompt（MCP prompts），接上就有，不用装任何 skill。Claude Code 会把它们变成斜杠命令 `/open-bingyan:course_picker` 和 `/open-bingyan:my_day`；其他客户端在 prompt 列表里能看到。
+
+| Prompt | 参数 | 做什么 |
+| --- | --- | --- |
+| `course_picker` | `preference`（可选） | 选课参谋完整流程：先 `find_free_electives`，再对候选调 `course_detail` 读评价和上课时间，对照 `my_week` 确认哪个课堂空着，给 3 门以内带证据的候选 |
+| `my_day` | `date`（可选） | 课表问答：今天/明天/某天有什么课、下一节几点在哪、哪天下午空 |
+
+同样的流程在 [hust-skills](https://github.com/BingyanStudio/hust-skills) 里也有 `SKILL.md` 版本，供没有 MCP 的环境使用。
+
 ## 一些好用的问法
 
+- **"这学期公选课里，不跟我课表冲突、评价好、不点名的有哪些？"**
 - "这学期公选课里评价最好的历史类课程是哪几门？点名严不严？"
 - "帮我找一下一元分析的往年试卷。"
 - "我明天上午有课吗？第一节几点？"
@@ -96,5 +116,5 @@ https://open-dev-api.bingyan.net/mcp
 ## 边界
 
 - 服务端不做跨用户查询：`my_*` 永远是 Key 所有者本人的数据，工具没有 `cid` 参数。
-- 没有限流承诺。请把 Agent 的 Key 单独建一把，出问题直接撤销。
+- 每把 Key 每分钟最多 120 次调用（HTTP 和 MCP 合计）。超出返回 `429 rate_limit_exceeded` 并带 `Retry-After`。这是为了保护上游校园服务，不是配额产品；正常一个人驾驭 Agent 用不到这个数。请把 Agent 的 Key 单独建一把，出问题直接撤销。
 - 这是测试环境入口。正式环境上线后地址会换成 `https://open-api.bingyan.net/mcp`，Key 也需要在正式控制台重新创建。
