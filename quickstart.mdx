@@ -1,40 +1,21 @@
 ---
 title: "第一次调用"
-description: "创建一把 API Key，然后从 Agent 或脚本里拿到第一条真实结果"
+description: "三分钟，从零到 Agent 回答第一个关于华科的问题"
 ---
 
-三步：创建 Key → 选一种接入方式 → 看到结果。整个过程不需要写服务端代码。
+<Steps>
+  <Step title="创建一把 API Key">
+    打开[控制台](https://open-dev.bingyan.net/console/)，用 Hustoday 账号登录，点「创建 API Key」。
 
-## 1. 创建 API Key
+    名称写它给谁用（比如 `Claude Code`）。权限默认勾好了「只读」——课程、资料、动态、你自己的课表都能读，但不能替你发帖、收藏或改课表。对 Agent 来说这就是全部需要的。
 
-打开[控制台](https://open-dev.bingyan.net/console/)，用 Hustoday 账号登录，新建一把 Key。名称写用途（例如 `Claude Code`），权限按需要勾选：
+    <Warning>
+      Secret 只出现这一次，形如 `byk_test_…`。它代表你本人，不要贴进群聊、不要提交到 Git。
+    </Warning>
+  </Step>
 
-| 你想做什么 | 勾选的 Scope |
-| --- | --- |
-| 查课程、看评价 | `courses:public:read` |
-| 查 1037wiki 资料 | `wiki:public:read` |
-| 看 Hustoday 校园动态 | `hustoday:public:read` |
-| 问"我今天有什么课" | `schedule:self:read` |
-| 让 Agent 知道我是谁 | `profile:self:read` |
-
-一次勾完也可以：[带预选的创建链接](https://open-dev.bingyan.net/console/?scope=courses:public:read&scope=wiki:public:read&scope=hustoday:public:read&scope=schedule:self:read&scope=profile:self:read)。
-
-<Warning>
-  Secret 只展示一次，形如 `byk_test_…`。保存到密码管理器或环境变量，不要提交到 Git，也不要贴进群聊。
-</Warning>
-
-## 2. 选一种接入方式
-
-<Tabs>
-  <Tab title="Agent（MCP）">
-    平台的 MCP 入口是 `https://open-dev-api.bingyan.net/mcp`，用同一把 Key 做 Bearer Token。以 Claude Code 为例，在终端执行：
-
-    ```bash
-    claude mcp add --transport http open-bingyan https://open-dev-api.bingyan.net/mcp \
-      --header "Authorization: Bearer byk_test_你的Key"
-    ```
-
-    或者把下面这段放进项目的 `.mcp.json`（Claude Code、Cursor、Codex 等都认这个格式）：
+  <Step title="复制 MCP 配置，粘进你的 Agent">
+    Secret 出现的那一屏有一个 **复制 MCP 配置** 按钮。它复制的是这段（Secret 已填好）：
 
     ```json
     {
@@ -42,68 +23,75 @@ description: "创建一把 API Key，然后从 Agent 或脚本里拿到第一条
         "open-bingyan": {
           "type": "http",
           "url": "https://open-dev-api.bingyan.net/mcp",
-          "headers": { "Authorization": "Bearer byk_test_你的Key" }
+          "headers": { "Authorization": "Bearer byk_test_…" }
         }
       }
     }
     ```
 
-    然后直接问：
+    <Tabs>
+      <Tab title="Claude Code">
+        粘到项目根目录的 `.mcp.json`（没有就新建）。或者在终端：
+        ```bash
+        claude mcp add --transport http open-bingyan https://open-dev-api.bingyan.net/mcp \
+          --header "Authorization: Bearer byk_test_…"
+        ```
+      </Tab>
+      <Tab title="Cursor">
+        粘到 `~/.cursor/mcp.json`。
+      </Tab>
+      <Tab title="Codex">
+        `~/.codex/config.toml` 里加一段：
+        ```toml
+        [mcp_servers.open-bingyan]
+        url = "https://open-dev-api.bingyan.net/mcp"
+        http_headers = { Authorization = "Bearer byk_test_…" }
+        ```
+      </Tab>
+    </Tabs>
 
+    重开一次 Agent。
+  </Step>
+
+  <Step title="问它一个问题">
     > 帮我看看「中国文化史」哪个老师评价最好，点名严不严？
 
-    Agent 会调用 `search_courses` 和 `course_detail` 并给出带证据的回答。全部工具见 [MCP 工具](/mcp-tools)。
-  </Tab>
-  <Tab title="curl / 脚本">
-    所有接口都是 `https://open-dev-api.bingyan.net/v1/...`，请求头带 `Authorization: Bearer <Key>`：
+    Agent 会先调 `search_courses`，再对每位老师调 `course_detail`，然后告诉你：李琼等的 10 条评价全部"很赞"，不点名不签到，期末论文；白杨等 44 条评价、39 条"很赞"，要签到、考试、有作业；陈文龙等还没有评价。附上学生原话和评价时间。
 
-    ```bash
-    export OPEN_BINGYAN_API_KEY="byk_test_你的Key"
+    **看到这样的回答，就接通了。** 接下来可以直接问「我明天几点有课」「找一下一元分析的往年试卷」「这学期有哪些不跟我课表冲突的公选课」。全部能问的见 [MCP 工具](/mcp-tools)。
+  </Step>
+</Steps>
 
-    curl --request GET \
-      --url "https://open-dev-api.bingyan.net/v1/courses/search?keyword=文化史" \
-      --header "Authorization: Bearer $OPEN_BINGYAN_API_KEY"
-    ```
+## 不用 Agent，直接调接口
 
-    返回：
+同一把 Key 也是 REST API 的凭证。所有接口在 `https://open-dev-api.bingyan.net/v1/…`，请求头带 `Authorization: Bearer <Key>`：
 
-    ```json
-    {
-      "items": [
-        {
-          "name": "中国文化史",
-          "teacher": "白杨等",
-          "category": "中国与世界",
-          "credit": "2",
-          "quality": 1.21,
-          "assessment_count": 44,
-          "rollcall_way": "签到",
-          "assessment_way": "考试",
-          "has_assignment": "有作业"
-        }
-      ],
-      "total": 4
-    }
-    ```
+```bash
+curl "https://open-dev-api.bingyan.net/v1/courses/search?keyword=文化史" \
+  -H "Authorization: Bearer byk_test_…"
+```
 
-    每个路径需要哪个 Scope 见[能力与权限](/capabilities)，完整参数见 [API Reference](/api-reference/搜索公开课程)。
-  </Tab>
-  <Tab title="Agent Skill">
-    如果你在写 Skill（WorkBuddy、Claude Code、Cursor、Codex 通用的 `SKILL.md` 格式），冰岩的 [hust-skills](https://github.com/BingyanStudio/hust-skills) 仓库里有一组基于本平台的 skill：选课参谋、我的课表、找资料、校园动态。
+```json
+{
+  "items": [
+    { "name": "中国文化史", "teacher": "李琼等", "credit": "2",
+      "quality": 1, "assessment_count": 10,
+      "rollcall_way": "不点名不签到", "assessment_way": "论文", "has_assignment": "有作业" }
+  ],
+  "total": 4
+}
+```
 
-    ```bash
-    git clone https://github.com/BingyanStudio/hust-skills.git
-    cp -r hust-skills/skills/hust-timetable ~/.claude/skills/   # 或你的 Agent 的 skills 目录
-    ```
+`quality` 是 1–3 分，**越低越好**（1 = 所有评价都是"很赞"），-1 表示还没有评价。每个接口需要哪个权限见[能力与权限](/capabilities)，完整参数见 [API Reference](/api-reference/搜索公开课程)。
 
-    这些 Skill 会优先使用上面的 MCP 工具；没有 MCP 的环境下退回到脚本，从环境变量 `OPEN_BINGYAN_API_KEY` 读 Key。写自己的 Skill 时也建议这样做，不要把 Key 写进 Skill 文件。
-  </Tab>
-</Tabs>
+写 Skill 的话，[hust-skills](https://github.com/BingyanStudio/hust-skills) 里的 `hust-course-picker`、`hust-timetable`、`hust-study-materials`、`hust-campus-feed` 就是基于这些接口的现成例子；它们优先用 MCP 工具，没有 MCP 时从环境变量 `OPEN_BINGYAN_API_KEY` 读 Key。
 
-## 3. 判断结果
-
-- 拿到 JSON 就是成功。个人数据接口（课表、资料）始终返回 Key 所有者本人的数据，不接受 `cid`、学号等身份参数。
-- `401 invalid_api_key`：Key 不完整、环境不对（`byk_test_` 的 Key 只能调 `open-dev-api`），或已撤销。
-- `403 insufficient_scope`：这把 Key 没勾这个接口要的 Scope。Scope 创建后不可改，重新建一把带该 Scope 的 Key 再撤销旧的。MCP 工具遇到这种情况会直接告诉 Agent 缺哪个 Scope，并给出带预选的控制台链接。
-- `503 upstream_unavailable`：上游校园服务没有响应，稍后重试。
-- 上游自己的 4xx/5xx 会原样透传（例如羽球服务对没在它那里注册过的用户返回 `500 Failed to get user`），这类错误意味着你需要先在对应产品里有账号。
+<Accordion title="遇到问题">
+  - **Agent 里看不到 open-bingyan 的工具**：配置文件位置不对，或没有重开 Agent。用 curl 直接调一次 `/v1/me` 能分清是 Key 的问题还是 Agent 配置的问题。
+  - **`401 invalid_api_key`**：Key 复制不完整，或已撤销。`byk_test_` 的 Key 只对 `open-dev-api.bingyan.net` 有效。
+  - **`403 insufficient_scope`**：这把 Key 没勾该接口的权限。权限创建后不可改——新建一把带该权限的，撤销旧的。MCP 工具会直接告诉 Agent 缺哪个权限并给出带预选的控制台链接。
+  - **`not_found: no synced terms`**：课表工具需要你先在 Hustoday App 里同步过课表。
+  - **`429 rate_limit_exceeded`**：一分钟超过 120 次。看 `Retry-After`。
+  - **`503 upstream_unavailable`**：背后的校园服务没有响应，稍后再试。
+  - **羽球返回 `500 Failed to get user`**：你的账号没在羽球平台注册过。上游自己的错误会原样返回。
+</Accordion>
