@@ -69,7 +69,7 @@ https://open-dev-api.bingyan.net/mcp
 
 | 工具 | 做什么 | Scope |
 | --- | --- | --- |
-| `search_courses` | 按课程名或老师名模糊搜索爱选修上的课程（以公选课、体育课为主，约 2000 门），返回学分、类别、评价数和 quality_score | `courses:public:read` |
+| `search_courses` | 按课程名或老师名模糊搜索爱选修上的课程（以公选课、体育课为主，约 2000 门），返回学分、类别、评价数和 quality（1–3，越低越好，-1 无评价） | `courses:public:read` |
 | `hot_courses` | 当前搜索最多的课程 | `courses:public:read` |
 | `course_detail` | 一门课的完整词条：点名/考核/作业情况、上课时间地点、好评/一般/差评计数、每条学生评价 | `courses:public:read` |
 | `search_wiki` | 搜索 1037wiki 学习资料（往年试卷、笔记、课件），返回资料页元数据 | `wiki:public:read` |
@@ -78,7 +78,7 @@ https://open-dev-api.bingyan.net/mcp
 | `search_hustoday` | 全文搜索 Hustoday 帖子 | `hustoday:public:read` |
 
 <Tip>
-  爱选修的 `quality_score` 是 0–2 的加权平均，**越低越好**（0 表示所有评价都是"很赞"）。工具说明里已经写明，Agent 不会弄反；你自己写代码读 REST 的 `quality` 字段时请注意同样的语义。
+  爱选修的 `quality` / `quality_score` 是 1–3 的加权平均，**越低越好**（1 表示所有评价都是"很赞"，3 表示都是"糟糕"），还没有评价的课是 -1。工具说明里已经写明，Agent 不会弄反；你自己写代码读 REST 的 `quality` 字段时请注意同样的语义。
 </Tip>
 
 ### 你本人的数据
