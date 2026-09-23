@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "冰岩开放平台",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#087C6E",
+    "light": "#2BA58F",
+    "dark": "#065F55"
   },
   "favicon": {
     "light": "/images/favicon.svg",
