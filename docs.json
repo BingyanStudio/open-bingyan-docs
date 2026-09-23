@@ -90,5 +90,15 @@
         "method": "bearer"
       }
     }
+  },
+  "appearance": {
+    "default": "light",
+    "strict": false
+  },
+  "background": {
+    "color": {
+      "light": "#F4F8F7",
+      "dark": "#0E1514"
+    }
   }
 }
