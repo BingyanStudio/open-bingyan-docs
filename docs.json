@@ -28,23 +28,26 @@
       {
         "language": "cn",
         "default": true,
-        "groups": [
+        "tabs": [
           {
-            "group": "开始使用",
-            "pages": [
-              "index",
-              "quickstart"
+            "tab": "指南",
+            "groups": [
+              {
+                "group": "开始使用",
+                "pages": [
+                  "index",
+                  "quickstart"
+                ]
+              },
+              {
+                "group": "接入方式",
+                "pages": [
+                  "mcp-tools",
+                  "capabilities"
+                ]
+              }
             ]
           },
-          {
-            "group": "接入方式",
-            "pages": [
-              "mcp-tools",
-              "capabilities"
-            ]
-          }
-        ],
-        "tabs": [
           {
             "tab": "API Reference",
             "openapi": "openapi.json"
