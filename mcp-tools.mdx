@@ -1,9 +1,9 @@
 ---
 title: "MCP 工具"
-description: "把华科的课程评价、资料库、校园动态和你的课表接进任何支持 MCP 的 Agent"
+description: "把华科的课程评价、资料库、校园动态、食堂和你的课表接进任何支持 MCP 的 Agent，并让它替你收藏、报名、设提醒"
 ---
 
-把下面这个地址配进任何支持 MCP 的 Agent，它就会多出 13 个关于华科的工具和 2 个现成的工作流。用的是和 REST API 同一把 Key、同一套权限；不需要写代码。
+把下面这个地址配进任何支持 MCP 的 Agent，它就会多出 22 个关于华科的工具和 2 个现成的工作流：17 个查数据，5 个替你做事（收藏课程、报名/退出约球、给手机发提醒）。用的是和 REST API 同一把 Key、同一套权限；不需要写代码。
 
 ```text
 https://open-dev-api.bingyan.net/mcp
@@ -12,7 +12,7 @@ https://open-dev-api.bingyan.net/mcp
 - 传输：Streamable HTTP，无状态。每个请求独立鉴权，服务端不保存会话。
 - 鉴权：请求头 `Authorization: Bearer <API Key>`。没有 OAuth 弹窗，因为 Key 本身就代表你。
 - 协议版本：2024-11-05 到 2026-07-28 都支持，客户端自动协商。
-- 所有工具当前都是只读的。写操作（发帖、收藏、约球）仍走 REST API 对应的 `*:self:write` Scope。
+- 查询类工具标 `readOnlyHint=true`。5 个动作类工具标 `readOnlyHint=false` 并明确 `destructiveHint`，Claude Code / Cursor 等客户端会在执行前向你确认；工具说明也要求 Agent 先和你核对对象（哪门课、哪场球、几点）。动作只作用于你本人的数据，需要对应的 `*:self:write` Scope。发帖、评论这类公开内容的写操作没有做成工具，仍只走 REST。
 
 ## 接入
 
@@ -47,7 +47,7 @@ https://open-dev-api.bingyan.net/mcp
       -H "Accept: application/json, text/event-stream" \
       -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
     ```
-    看到 `search_courses` 等 13 个工具就通了。
+    看到 `search_courses` 等 22 个工具就通了。
   </Tab>
 </Tabs>
 
@@ -76,6 +76,8 @@ https://open-dev-api.bingyan.net/mcp
 | `wiki_page` | 一个资料页的文件列表、预览图和所属合集 | `wiki:public:read` |
 | `hustoday_feed` | Hustoday 最新公开动态 | `hustoday:public:read` |
 | `search_hustoday` | 全文搜索 Hustoday 帖子 | `hustoday:public:read` |
+| `canteens` | 全校 25 个食堂：校区、评分、人均、营业时段，以及**此刻是否营业**（按 Asia/Shanghai 当前时间算） | `foodie:public:read` |
+| `find_food` | 在同学们记录的约 2000 道菜里找：菜名、价格、评分和好评/一般/差评票数、类别、在哪个食堂、该食堂此刻是否营业；可按菜名、食堂、校区、类别缩小，默认评分优先 | `foodie:public:read` |
 
 <Tip>
   爱选修的 `quality` / `quality_score` 是 1–3 的加权平均，**越低越好**（1 表示所有评价都是"很赞"，3 表示都是"糟糕"），还没有评价的课是 -1。工具说明里已经写明，Agent 不会弄反；你自己写代码读 REST 的 `quality` 字段时请注意同样的语义。
@@ -88,10 +90,24 @@ https://open-dev-api.bingyan.net/mcp
 | `my_terms` | 你在 Hustoday 里同步过的学期列表，标出当前学期 | `schedule:self:read` |
 | `my_timetable` | 某一天（默认今天）的课和自定义日程，含教学周、节次和上下课时间 | `schedule:self:read` |
 | `my_week` | 某一教学周（默认本周）的全部课程 | `schedule:self:read` |
-| `badminton_matches` | 羽球平台上你可见的约球活动 | `badminton:self:read` |
+| `my_favorite_courses` | 你在爱选修收藏的课程，带评价指标和上课时间 | `courses:self:read` |
+| `badminton_matches` | 羽球平台上你可以报名的约球活动（有你性别的空位、尚未开始） | `badminton:self:read` |
+| `my_badminton_matches` | 你自己的约球：已加入 / 申请中 / 我发起的 | `badminton:self:read` |
 | `me` | Key 所有者的公开资料（昵称、专业、校区） | `profile:self:read` |
 
 课表工具的前提是你在 Hustoday App 里同步过课表；没同步过会返回 `not_found: no synced terms`。上下课时间按华科的节次表推算，冬季/夏季作息由学期数据自带的 season 决定（秋季学期用冬季表）。
+
+### 替你做事
+
+| 工具 | 做什么 | 可撤销 | Scope |
+| --- | --- | --- | --- |
+| `favorite_course` | 把一门课（课名 + 老师，和 `search_courses` 返回的一致）加进你的爱选修收藏 | 是（`unfavorite_course`） | `courses:self:write` |
+| `unfavorite_course` | 从收藏移除一门课 | 是 | `courses:self:write` |
+| `apply_badminton_match` | 报名一场约球。进入组织者的候选列表并通知对方，组织者在 App 里同意或拒绝；满员、已开始、已报名、资料不全时平台会拒绝，**原因原话返回** | 是（`leave_badminton_match`） | `badminton:self:write` |
+| `leave_badminton_match` | 撤回申请或退出已确认的名额（退出时组织者会收到通知和你的留言） | 只能重新报名 | `badminton:self:write` |
+| `remind_me` | 通过 Hustoday App 给你的手机发一条通知，立刻或在指定时间（`HH:MM` 今天 / `YYYY-MM-DD HH:MM` / RFC 3339，Asia/Shanghai）；消息也会留在 Hustoday 通知箱 | 定时提醒发出后不能通过工具取消 | `notifications:self:write` |
+
+动作类工具的返回是"平台确认了什么"，不是"大概成功了"：`favorited: true` 附收藏总数；`status: applied` 说明只是进了候选列表，要看 `my_badminton_matches role=joined` 才知道是否被确认；`scheduled_for` 是推送系统接受的时间。被拒绝时错误里就是平台的原话（如 `rejected: the badminton platform refused: Match is full`），Agent 直接转告即可。
 
 ## 服务端 Prompt
 
@@ -102,7 +118,7 @@ https://open-dev-api.bingyan.net/mcp
 | `course_picker` | `preference`（可选） | 选课参谋完整流程：先 `find_free_electives`，再对候选调 `course_detail` 读评价和上课时间，对照 `my_week` 确认哪个课堂空着，给 3 门以内带证据的候选 |
 | `my_day` | `date`（可选） | 课表问答：今天/明天/某天有什么课、下一节几点在哪、哪天下午空 |
 
-同样的流程在 [hust-skills](https://github.com/BingyanStudio/hust-skills) 里也有 `SKILL.md` 版本，供没有 MCP 的环境使用。
+没有 MCP 的环境可以照这两个 prompt 的流程写成自己的 `SKILL.md`，接口和 Scope 见[能力与权限](/capabilities)。
 
 ## 一些好用的问法
 
@@ -111,10 +127,14 @@ https://open-dev-api.bingyan.net/mcp
 - "帮我找一下一元分析的往年试卷。"
 - "我明天上午有课吗？第一节几点？"
 - "本周哪天下午是空的？"
+- "中午西区哪些食堂开着？有什么评分高又便宜的？"
+- "帮我收藏「中国文化史」白杨老师那门课。"
+- "周五晚上光谷体育馆那场约球帮我报名，明天早上 8 点提醒我带球拍。"
 - "Hustoday 上最近有人发羽毛球约球吗？"
 
 ## 边界
 
-- 服务端不做跨用户查询：`my_*` 永远是 Key 所有者本人的数据，工具没有 `cid` 参数。
+- 服务端不做跨用户查询：`my_*` 永远是 Key 所有者本人的数据，工具没有 `cid` 参数；动作类工具也只能改你自己的收藏、报名和通知。
+- 平台只是把动作转给对应的校园服务并如实返回结果，不重试、不"猜成功"。约球报名是否被组织者接受、定时提醒是否已送达，以对应 App 为准。
 - 每把 Key 每分钟最多 120 次调用（HTTP 和 MCP 合计）。超出返回 `429 rate_limit_exceeded` 并带 `Retry-After`。这是为了保护上游校园服务，不是配额产品；正常一个人驾驭 Agent 用不到这个数。请把 Agent 的 Key 单独建一把，出问题直接撤销。
 - 这是测试环境入口。正式环境上线后地址会换成 `https://open-api.bingyan.net/mcp`，Key 也需要在正式控制台重新创建。

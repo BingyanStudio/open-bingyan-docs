@@ -7,7 +7,7 @@ description: "三分钟，从零到 Agent 回答第一个关于华科的问题"
   <Step title="创建一把 API Key">
     打开[控制台](https://open-dev.bingyan.net/console/)，用 Hustoday 账号登录，点「创建 API Key」。
 
-    名称写它给谁用（比如 `Claude Code`）。权限默认勾好了「只读」——课程、资料、动态、你自己的课表都能读，但不能替你发帖、收藏或改课表。对 Agent 来说这就是全部需要的。
+    名称写它给谁用（比如 `Claude Code`）。权限默认勾好了「只读」——课程、资料、动态、食堂、你自己的课表都能读，但不能替你做任何事。想让 Agent 帮你收藏课程、报名约球或往手机发提醒，再勾上对应的「可写」（`courses:self:write`、`badminton:self:write`、`notifications:self:write`）；这些动作执行前 Agent 会先向你确认。
 
     <Warning>
       Secret 只出现这一次，形如 `byk_test_…`。它代表你本人，不要贴进群聊、不要提交到 Git。

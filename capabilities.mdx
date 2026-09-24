@@ -51,13 +51,15 @@ Scope 命名规则：`<产品>:<public|self>:<read|write>`。`public` 是所有�
 | `GET /v1/badminton/user/info` `match` `match/matches` | `badminton:self:read` |
 | `POST /v1/badminton/user/update` `match/new|del|update|apply|allow|reject|remove|leave` 等 | `badminton:self:write` |
 
-羽球服务的所有接口都需要你在它那里有账号；没有时上游返回 `500 Failed to get user`。
+羽球服务的所有接口都需要你在它那里有账号；没有时上游返回 `500 Failed to get user`。`match/apply` 和 `match/leave` 的请求体是 `{"id": <活动 id>, "message": "留言"}`；报名只是进入候选列表，组织者在 App 里同意后才算加入。
 
 ## 吃什么（Foodie）
 
 | 接口 | Scope |
 | --- | --- |
 | `POST /v1/foodie/graphql`（公共 query） | `foodie:public:read` |
+
+平台解析 GraphQL 文档，只放行 `query`（含内省）；`mutation` / `subscription` 在到达 Foodie 之前就被拒绝，返回 `403 forbidden`。请求里不会附带任何 Foodie 登录态。不想写 GraphQL 的话，MCP 的 `canteens` / `find_food` 已经把食堂、菜品和"此刻是否营业"整理好了。
 
 ## 反馈、通知、资料
 
